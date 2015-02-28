@@ -8,6 +8,6 @@ for item in jointinfo:
         print item
         j = cmds.joint(n=item[0], p=item[1], rad=0.1)
         if i > 0:
-            cmds.joint( jointinfo[i-1][0], e=True, zso=True, oj='xyz' )
+            cmds.joint( jointinfo[i-1][0], e=True, zso=True, oj='xyz', sao='zup' )
         i+=1
 cmds.delete ('temp')
