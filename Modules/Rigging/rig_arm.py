@@ -5,8 +5,11 @@ prefix='setup_'
 
 def createJoints(jointInfo, prefix):
     for each in jointInfo:
-        mc.joint(p=each[1],n=(prefix+each[0]),sym=True)
-        #mc.joint(e=True,oj='xyz',secondaryAxisOrient='yup',ch=True,zso=True)
+        if mc.objExists(each[0]):
+            pass
+        else:
+            jnt = mc.joint(p=each[1],n=(prefix+each[0]),sym=True)
+            mc.joint(jnt,e=True,oj='xyz',secondaryAxisOrient='yup',ch=True,zso=True)
         
         
 createJoints(jointInfo, prefix)
