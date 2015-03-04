@@ -7,6 +7,6 @@ cmds.select(deselect = True)
 
 # Create the arm placement joints
 for i in armJoints:
-	cmds.joint(name = i[0], position = i[1], radius = .25, sym=True)
+	cmds.joint(name = i[0], position = i[1], radius = .25)
 
 cmds.select(deselect = True)
