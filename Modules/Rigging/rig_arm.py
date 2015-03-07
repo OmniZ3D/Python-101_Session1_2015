@@ -1,53 +1,122 @@
 import maya.cmds as mc
- 
+
+#jointInfo contains the names of the joints to be created
 jointInfo=['arm__1',[5,0,0]],['elbow__1',[10,0,-1]],['wrist__1',[15,0,0]],['wristEnd__1',[18,0,0]]
-# Creating a variable called "prefix" is a good way to make this code re-usable.
-prefix='setup_'
-# Add a variable for the side
-side='_l'
-""" Daniel is using a funtion here.  We haven't talked about functions yet, but this is a way to wrap up 
-a block of code.  We will get into this soon """
-def createJoints(jointInfo, prefix, side):
+
+#prefix and side of the joint chain
+prefix = 'setup_'
+side = 'l_'
+symmetry = True
+
+#function to create joints
+def createJoints(jointInfo, prefix, side, symmetry):
+    """ Here is another cool thing you can do.  Create an empty
+    list.  Later in the script we will fill the list with items.
+    """
+    jointlist = []
+        
+    #length of the list
+    lstlen = len(jointInfo)
+    print ' joinInfo contains this many items %s' % lstlen
+    
     for each in jointInfo:
-        # Lets get our joint name put together before we build the joints so we can check if the joint exists.
-        jntname = prefix + side + each[0]
-        print ' The joint name is %s' % each[0]
-        # Do a check to see if the joint exists.
+        #create joint name from variables
+        jntname = prefix + side + each[0]       
+        
+        # Check to see if the jntname exixsts
+        """ jntname will be equal to the new joint name returned from generateNewJointName
+        if that name already exists """
+        #condition that states if joints exist. If true creates a new name
         if mc.objExists(jntname) == True:
-            # If the joint exists, we need to create a new name.
-            # Partition will split a string at the defined character.
-            print each[0].partition('__')
-            instance = each[0].partition('__')[2]
-            # instance will be the number at the end of jntname.
-            """ lets replace that number with something else.  We could do this with a function
-            to make things more robust, but for now we will keep it simple """
-            # Do do math we need an integer + an integer.
-            # I need the new instance as a string so I can add it to a string later. 
-            # So cast instance as an int and the product of instance + 1 as a string.
-            newinstance = str(int(instance) + 1)
-            print ' Our new instance is %s' % newinstance
-            # Lets use replace to change our instance number.
-            # We are overriding the jntname variable.
-            jntname = jntname.replace('__' + instance, '__' + newinstance)
-            print ' Our new joint name is %s' % jntname
-        """ Joints will add to a hierarchy if a joint is selected.
-        It is best to deselect before making a joint.  This is a problem
-        if we are using the for loop to build the joints in a hierarchy.
-        We can get around this by doing a check. """
+            jntname = generateNewJointName(jntname)
         
-        # len will tell us the length of a list.
-        lstlen = len(jointInfo)
-        print ' jointInfo contains this many items. %s' % lstlen
-         
-        jnt = mc.joint(p=each[1], n=jntname, sym=True)
-        mc.joint(jnt, e=True, oj='xyz', secondaryAxisOrient='yup', ch=True, zso=True)
+        print 'The joint name is %s ' % each[0]
         
-        # Now do a condition to see if we made all the joints in jointInfo
-        if each == jointInfo[lstlen-1]:
-            mc.select(d=True)
-            print "We made all of the joints."
+        #create joints
+        jnt = mc.joint(p=each[1], n=jntname, sym=symmetry)
+        print jnt
+  
+        # Deselect so we don't make a joint hierarchy.
+        cmds.select(d=True)
+
+        if symmetry == True:
+            """ The next part is a bit of a cheat, but I think you will find
+            yourself coming up with several cheats when built in Maya functionality
+            does less than optimal things.  We know the 'side' we are using and we
+            also know that the mirror joints will have the same name as the original 
+            joints except __1 will be replaced with __2."""
+            symjnt = renameSymmetryJnt(jnt)
+        
+            """ Now we add the new joint and symmetry joint to the list we made up top. """
+            # To do this we use a list method called .append
+            jointlist.append(jnt, symjntname)
+        
         else:
-            print "Still making joints here."
+            jointlist.append(jnt)
+
+        
+    # Now we can parent our joints.
+    for j in range(len(jointlist)):
+        if j != 0:
+            cmds.parent(jointlist[j][0], jointlist[j-1][0])
+        if symmetry == True:
+            cmds.parent(jointlist[j][1], jointlist[j-1][1])
+
+   
+createJoints(jointInfo, prefix, side, symmetry)
+
+def generateNewJointName(jntname):
+    print "in Gen"
+    print jntname
+    
+    #split string at defined character
+    print jntname.partition('__')
+    instance = jntname.partition('__')[2]
+
+    #cast instance as a string to add it to another string later
+    newinstance = str(int(instance)+1)
+    print ' Our new instance is %s' % newinstance
+
+    #replace jntname with our instance number
+    jntname = jntname.replace('__'+instance,'__'+newinstance)
+    print ' Our new joint name is %s' % jntname
+    
+    # Remember "return" returns the indicated data as the result of the function call.
+    return jntname
+
+def renameSymmetryJnt(jnt):
+    symConstr = mc.listConnections(jnt, connections=True, t='symmetryConstraint', et=True)
+    print "constraint"
+    print symConstr
+     
+    # So we will refine more.
+    # First a condition to make sure the list has items.
+    if symConstr != []:
+        for item in symConstr:
+            print item
+            # .startswith is a string operation
+            if item.startswith('symmetryConstraint'):
+                con = item
+                 
+    # Now get the joint connected to the constraint.
+    if con != None:
+        conlist = cmds.listConnections(con, source=True, type='joint')
+        print 'conlist'
+        print conlist
          
-         
+        if conlist[0].startswith(prefix):
+            symjnt = conlist[0]
+            print symjnt
+             
+            try:
+                tmpvar = conlist[0].replace('_l_', '_r_')
+                symjntname = tmpvar.replace('__2', '__1'
+                cmds.rename(conlist[0], symjntname)
+            except: pass
+    
+def orientJoints(jnt):
+    #cycles through the joint list to orient the joints
+    for each in jnt:
+        mc.joint(each, e=True, oj='xyz', secondaryAxisOrient='yup', ch=True, zso=True)
+
 createJoints(jointInfo, prefix, side)
