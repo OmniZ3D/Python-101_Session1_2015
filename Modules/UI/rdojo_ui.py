@@ -1,7 +1,6 @@
 import maya.cmds as cmds
 
 def runCmd(*args):
-	print args
 	from Modules.Rigging import rig_arm
 	reload(rig_arm)
 
