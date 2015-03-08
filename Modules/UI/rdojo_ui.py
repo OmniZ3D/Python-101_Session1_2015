@@ -3,6 +3,7 @@ import maya.cmds as cmds
 def runCmd(*args):
 	print args
 	from Modules.Rigging import rig_arm
+	reload(rig_arm)
 
 def createMenu(*args):
 	mi = cmds.window("MayaWindow", ma=True, q=True)
