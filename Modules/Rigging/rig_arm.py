@@ -13,11 +13,20 @@ def createJoints(prefix):
     for i in info["arm"]:
         jointName = prefix + i[0]
         if cmds.objExists(jointName) == True:
-            print "Joint exists!!"
+            print "Arm joint exists!!"
             break
         else:
             cmds.joint(n=jointName, p=i[1])
-            print "%s done!" % jointName
+            print "%s built!" % jointName
+    cmds.select(cl=True)
+    for i in info["leg"]:
+        jointName = prefix + i[0]
+        if cmds.objExists(jointName) == True:
+            print "Leg joint exists!!"
+            break
+        else:
+            cmds.joint(n=jointName, p=i[1])
+            print "%s built!" % jointName
     cmds.select(cl=True)
             
 createJoints(prefix)
