@@ -2,10 +2,6 @@ import maya.cmds as cmds
 
 class RDojo_UI:
 
-	def runCmd(*args):
-		from Modules.Rigging import rig_arm
-		reload(rig_arm)
-
 	def __init__(self, *args):
 		mi = cmds.window("MayaWindow", ma=True, q=True)
 		for m in mi:
@@ -25,3 +21,7 @@ class RDojo_UI:
 		cmds.button(l="Load layout", w=100, h=30)
 		cmds.button(l="Rig arm", w=100, h=30, c=self.runCmd)
 		cmds.showWindow()
+
+	def runCmd(*args):
+		from Modules.Rigging import rig_arm
+		reload(rig_arm)
