@@ -1,3 +1,3 @@
 # Load the UI
-from ui import rdojo_ui as ui
+from Modules.UI import rdojo_ui as ui
 reload(ui)
