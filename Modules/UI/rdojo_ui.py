@@ -1,10 +1,15 @@
 import maya.cmds as cmds
 import json
 import tempfile
+import os
 
 # Import our json_utils module
 import Modules.System.utils as utils
 reload(utils)
+import Modules.Rigging.rig_arm as rig_arm
+reload(rig_arm)
+import Modules.System.install as install
+reload(install)
 
 # The UI class
 class RDojo_UI:
@@ -42,7 +47,7 @@ class RDojo_UI:
 
         # Load Layout button
         cmds.separator(p=self.UIElements["guiFlowLayout1"])
-        self.UIElements["loadLayout_button"] = cmds.button(label='load layout', width=buttonWidth, height=buttonHeight, p=self.UIElements["guiFlowLayout1"]) 
+        self.UIElements["loadLayout_button"] = cmds.button(label='load layout', width=buttonWidth, height=buttonHeight, p=self.UIElements["guiFlowLayout1"], c=self.loadLayout) 
 
         # Save Layout button
         cmds.separator(p=self.UIElements["guiFlowLayout1"])
@@ -55,5 +60,11 @@ class RDojo_UI:
         """ Show the window"""
         cmds.showWindow(windowName)
     
-    def runRigCommand(*args):
-        print "Run Command"
+    def runRigCommand(self, *args):
+        rig_arm.Rig_Arm()
+
+    def loadLayout(self, *args):
+        # Since we are only making an arm, we can make a static path to the arm.json file here.
+        # What if we had a leg.json as well?
+        layoutfile = os.environ["RDOJO"] + "Layout/arm.json"
+        install.installLayout(layoutfile)
