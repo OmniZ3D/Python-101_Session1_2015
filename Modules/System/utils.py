@@ -1,5 +1,7 @@
+import maya.cmds as cmds
 # Import the Python json module
 import json 
+
 # Here are a couple of simple functions to read and write json data.
 def writeJson(fileName, data):
     with open(fileName, 'w') as outfile:
@@ -39,7 +41,6 @@ def createJoints(jointInfo, prefix, side, symmetry):
         
         #create joints
         jnt = cmds.joint(p=each[1], n=jntname, sym=symmetry)
-        print jnt
   
         # Deselect so we don't make a joint hierarchy.
         cmds.select(d=True)
@@ -49,23 +50,27 @@ def createJoints(jointInfo, prefix, side, symmetry):
             yourself coming up with several cheats when built in Maya functionality
             does less than optimal things.  We know the 'side' we are using and we
             also know that the mirror joints will have the same name as the original 
-            joints except __1 will be replaced with __2."""
-            symjnt = renameSymmetryJnt(jnt)
+            joints except __1 will be replaced with __2.  If you don't have
+            the symmetry option, you could skip this"""
+            symjntname = renameSymmetryJnt(jnt, prefix)
         
             """ Now we add the new joint and symmetry joint to the list we made up top. """
             # To do this we use a list method called .append
-            jointlist.append(jnt, symjntname)
+            jointlist.append([jnt, symjntname])
         
         else:
-            jointlist.append(jnt)
+            jointlist.append([jnt, None])
 
         
     # Now we can parent our joints.
     for j in range(len(jointlist)):
+        print jointlist[j]
         if j != 0:
             cmds.parent(jointlist[j][0], jointlist[j-1][0])
-        if symmetry == True:
+        if symmetry == True and j != 0:
             cmds.parent(jointlist[j][1], jointlist[j-1][1])
+
+    return (jointlist)
 
    
 
@@ -88,7 +93,7 @@ def generateNewJointName(jntname):
     # Remember "return" returns the indicated data as the result of the function call.
     return jntname
 
-def renameSymmetryJnt(jnt):
+def renameSymmetryJnt(jnt, prefix):
     symConstr = cmds.listConnections(jnt, connections=True, t='symmetryConstraint', et=True)
     print "constraint"
     print symConstr
@@ -104,7 +109,7 @@ def renameSymmetryJnt(jnt):
                  
     # Now get the joint connected to the constraint.
     if con != None:
-        conlist = cmds.listConnections(con, source=True, type='joint')
+        conlist = cmds.listConnections(con, s=False, destination=True, type='joint')
         print 'conlist'
         print conlist
          
@@ -117,6 +122,7 @@ def renameSymmetryJnt(jnt):
                 symjntname = tmpvar.replace('__2', '__1')
                 cmds.rename(conlist[0], symjntname)
             except: pass
+    return (symjntname)
     
 def orientJoints(jnt):
     #cycles through the joint list to orient the joints
