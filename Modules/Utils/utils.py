@@ -15,6 +15,7 @@ def readJson(fileName):
     return data
 
 def createJoints(jointInfo,prefix,side,symmetry):
+    #empty list that will store joint data
     jointlist=[]
 
     #length of the list

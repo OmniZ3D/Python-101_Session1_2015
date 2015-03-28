@@ -18,11 +18,11 @@ def installLayout(layoutfile, side, prefix, symmetry):
     #data to build the joints
     jntinfo = utils.createJoints(jointInfo, prefix, side, symmetry)
 
-    assetname = 'Layout_' + side + prefix
+    assetname = 'Layout' + side + prefix
     lytast = cmds.container(n=assetname)
 
     if symmetry == True:
-            mirassetname = 'LayoutMirror_' + side + prefix
+            mirassetname = 'LayoutMirror' + side + prefix
             mirrorlytast = cmds.container(n=mirassetname)
     for j in jntinfo:
         cmds.container(lytast, edit=True, an=j[0])

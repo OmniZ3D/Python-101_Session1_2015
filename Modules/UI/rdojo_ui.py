@@ -61,7 +61,7 @@ class RDojo_UI:
         self.UIElements["symmetry_checkbox"] = cmds.checkBox(label='Symmetry', p=self.UIElements["guiFlowLayout1"])
 
         #option menu for side
-        sides = ['l_','r_', 'c_']
+        sides = ['_l_','_r_', '_c_']
         cmds.separator(w=5,p=self.UIElements["guiFlowLayout1"])
         self.UIElements["side_optionmenu"] = cmds.optionMenu(label='Side', p=self.UIElements["guiFlowLayout1"])
         for s in sides:
