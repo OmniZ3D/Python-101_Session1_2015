@@ -16,7 +16,7 @@ def readJson(fileName):
 
 
 
-def createJoints(jointInfo, prefix, side, symmetry):
+def createLytJoints(jointInfo, prefix, side, symmetry):
     """ Here is another cool thing you can do.  Create an empty
     list.  Later in the script we will fill the list with items.
     """
@@ -69,7 +69,7 @@ def createJoints(jointInfo, prefix, side, symmetry):
             cmds.parent(jointlist[j][0], jointlist[j-1][0])
         if symmetry == True and j != 0:
             cmds.parent(jointlist[j][1], jointlist[j-1][1])
-
+    cmds.select(d=True)
     return (jointlist)
 
    
@@ -128,3 +128,108 @@ def orientJoints(jnt):
     #cycles through the joint list to orient the joints
     for each in jnt:
         cmds.joint(each, e=True, oj='xyz', secondaryAxisOrient='yup', ch=True, zso=True)
+
+def getLayoutAsset():
+    layoutasset = []
+
+    # The ls command can be used to find all nodes of a certain type.
+    #assetnodes = cmds.ls(type='container')
+    # The ls command can also be specific to our selection by using the sl flag
+    #assetnodes = cmds.ls(sl=True, type='container')
+    """ In our case we may be selecting a joint and not the asset when
+    we hit the rig arm button.  We can find the arm asset using the container command.
+    """
+
+    # Start by getting the selection
+    sel = cmds.ls(sl=True)[0]
+    # Clear the selection to be safe
+    cmds.select(d=True)
+    if cmds.nodeType(sel) == 'container':
+        # If the asset is selected, we can check it is an arm
+        if cmds.getAttr('%s.type' % sel) == 'Arm_':
+            layoutasset.append(sel)
+    # If we don't have the asset selected, we need to find it.
+    # Use the nodeList flag to see if our selection is in an asset
+    selast = cmds.container(q=True, fc=sel)
+    # Verify selast isn't None.
+    if selast != None:
+        layoutasset.append(selast)
+
+
+    return(layoutasset)
+
+
+def getAstContents(ast):
+    astcontents_dict = {}
+    astjnts = []
+    """ We could probably do this with one line, but we will
+    use a function so we can be more thorough. """
+    astcontents = cmds.container(ast, q=True, nl=True)
+    for a in astcontents:
+        if cmds.nodeType(a) == 'joint':
+            astjnts.append(a)
+
+    astcontents_dict['joints'] = astjnts
+
+    return (astcontents_dict)
+
+def createJointChain(jointInfo, prefix):
+    jointlist = []
+        
+    #length of the list
+    lstlen = len(jointInfo)
+    
+    for each in jointInfo:
+        #create joint name from variables
+        jntname = prefix + each[0]       
+  
+        #create joints
+        jnt = cmds.joint(p=each[1], n=jntname)
+
+        jointlist.append(jnt)
+  
+        # Deselect so we don't make a joint hierarchy.
+        cmds.select(d=True)
+
+    # Now we can parent our joints.
+    for j in range(len(jointlist)):
+        if j != 0:
+            cmds.parent(jointlist[j], jointlist[j-1])
+
+    cmds.select(d=True)
+    return (jointlist)
+
+
+def collectLytInfo(lytjnts, mirror):
+    rig_info = {}
+    # Get the position of our joints.
+    # We could get more info from the joints like orientation, rotate order, and more.
+    poslist = []
+    for j in lytjnts:
+        # xform is a great command that can be used to set and query the position of an object
+        poslist.append(cmds.xform(j, q=True, ws=True, t=True))
+
+    rig_info['layoutjointpositions'] = poslist
+    rig_info['layoutjoints'] = lytjnts
+
+    """ What if we are building a mirrored rig.  We need to find the mirrored
+    positions of the joints and we need a mirrored name.  We could get very 
+    in-depth with this if we needed to, but we will keep it simple for now.
+    We are probably working in standard Maya space with Y up and Z foreward. 
+    So we realy just need the inverted x axis. """
+    if mirror == True:
+        mlytjnts = []
+        mposlist = []
+        # Generate a new name for the joint.
+        # We could do a lot more to make this flexible.  Avoid hard coding names when possible.
+        for j in lytjnts:
+            mlytjnts.append(j.replace('_l_', '_r_'))
+
+        for p in poslist:
+            # Here I just replace the x axis with the inverted value.
+            mposlist.append([-p[0], p[1], p[2]])
+
+        rig_info['layoutjointpositions'] = mposlist
+        rig_info['layoutjoints'] = mlytjnts
+
+    return (rig_info)

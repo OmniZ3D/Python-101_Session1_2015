@@ -65,6 +65,10 @@ class RDojo_UI:
         cmds.separator(w=5, p=self.UIElements["guiFlowLayout1"])
         self.UIElements["symmetry_checkbox"] = cmds.checkBox( label='Symmetry', p=self.UIElements["guiFlowLayout1"])
 
+        # Check Box to indicate mirror
+        cmds.separator(w=5, p=self.UIElements["guiFlowLayout1"])
+        self.UIElements["mirror_checkbox"] = cmds.checkBox( label='Mirror', p=self.UIElements["guiFlowLayout1"])
+
         # Option menu for side
         # Make a list of possible sides
         sides = ['l_', 'r_', 'c_']
@@ -77,7 +81,8 @@ class RDojo_UI:
         cmds.showWindow(windowName)
     
     def runRigCommand(self, *args):
-        rig_arm.Rig_Arm()
+        mirror = cmds.checkBox(self.UIElements['mirror_checkbox'], q=True, value=True)
+        rig_arm.Rig_Arm(mirror)
 
     def loadLayout(self, *args):
     	# Pull all the options from the UI
@@ -88,10 +93,11 @@ class RDojo_UI:
     	""" For those of you running Maya 2013, consider how you could use 
     	symmetry to mirror joints later """
     	symmetry = cmds.checkBox(self.UIElements['symmetry_checkbox'], q=True, value=True)
+        mirror = cmds.checkBox(self.UIElements['mirror_checkbox'], q=True, value=True)
         # Since we are only making an arm, we can make a static path to the arm.json file here.
         # What if we had a leg.json as well?
         layoutfile = os.environ["RDOJO"] + "Modules/Layout/arm.json"
-        install.installLayout(layoutfile, side, prefix, symmetry)
+        install.installLayout(layoutfile, side, prefix, symmetry, mirror)
 
         
 
