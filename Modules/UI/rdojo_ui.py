@@ -48,22 +48,50 @@ class RDojo_UI:
  
         # Save Layout button
         cmds.separator(p=self.UIElements["guiFlowLayout1"])
-        self.UIElements["saveLayout_button"] = cmds.button(label='save layout', width=buttonWidth, height=buttonHeight, p=self.UIElements["guiFlowLayout1"]) 
+        self.UIElements["saveLayout_button"] = cmds.button(label='save layout', width=buttonWidth, height=buttonHeight, p=self.UIElements["guiFlowLayout1"], c=self.saveLayoutButton) 
  
         # Rig arm button
         cmds.separator(p=self.UIElements["guiFlowLayout1"])
-        self.part = 'arm'
-        self.symmetry = True
-        self.prefix = 'setup_'
-        self.UIElements["rigarm_button"] = cmds.button(label='rig arm', width=buttonWidth, height=buttonHeight, p=self.UIElements["guiFlowLayout1"], c=self.runRigCommand) 
+        self.UIElements["rigarm_button"] = cmds.button(label='rig part', width=buttonWidth, height=buttonHeight, p=self.UIElements["guiFlowLayout1"], c=self.runRigCommand) 
+
+                # Text field for the prefix name
+        cmds.separator(w=5, p=self.UIElements["guiFlowLayout1"])
+        self.UIElements["prefix_textfield"] = cmds.textField(width=buttonWidth, p=self.UIElements["guiFlowLayout1"])
  
+        # Check Box to indicate symmetry
+        cmds.separator(w=5, p=self.UIElements["guiFlowLayout1"])
+        self.UIElements["symmetry_checkbox"] = cmds.checkBox( label='Symmetry', p=self.UIElements["guiFlowLayout1"])
+ 
+        # Option menu for side
+        # Make a list of possible sides
+        sides = ['_L', '_R', '_C']
+        cmds.separator(w=5, p=self.UIElements["guiFlowLayout1"])
+        self.UIElements["side_optionmenu"] = cmds.optionMenu( label='Side', p=self.UIElements["guiFlowLayout1"])
+        for s in sides:
+            cmds.menuItem(label=s, p=self.UIElements["side_optionmenu"])
+ 
+        #option menu for part of rig to build
+        parts = ['arm', 'leg']
+        cmds.separator(w=5, p=self.UIElements["guiFlowLayout1"])
+        self.UIElements["partMenu"] = cmds.optionMenu( label='Part', p=self.UIElements["guiFlowLayout1"])
+        for s in parts:
+            cmds.menuItem(label=s, p=self.UIElements["partMenu"])
+
         """ Show the window"""
         cmds.showWindow(windowName)
      
     def runRigCommand(self, *args):
-        rig_arm.makeJoints(self.jntInfo, self.part, self.symmetry, self.prefix)
+        prefix = cmds.textField(self.UIElements['prefix_textfield'], q=True, text=True) + '_'
+        part = cmds.optionMenu (self.UIElements['partMenu'], value=True, query=True)
+        symmetry = cmds.checkBox(self.UIElements["symmetry_checkbox"], value=True, query=True)
+        side = cmds.optionMenu (self.UIElements['side_optionmenu'], value=True, query=True)
+        rig_arm.makeJoints(self.jntInfo, part, symmetry, prefix, side)
 
     def loadLayoutCommand(self, *args):
-        path = 'G:/Users/rogerm/Documents/GitHub/Python-101_Session1_2015/Modules/Layout/'
-        self.jntInfo = utils.readJson(path + 'joints.json')
+        path = cmds.fileDialog(directoryMask='G:/Users/rogerm/Documents/GitHub/Python-101_Session1_2015/Modules/Layout/*.json')
+        self.jntInfo = utils.readJson(path)
         return self.jntInfo           
+
+    def saveLayoutButton(self, *args):
+        path = cmds.fileDialog(directoryMask='G:/Users/rogerm/Documents/GitHub/Python-101_Session1_2015/Modules/Layout/*.json', mode =1)
+        utils.writeJson(path, self.jntInfo)
