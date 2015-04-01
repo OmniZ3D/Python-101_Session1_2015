@@ -114,3 +114,109 @@ def orientJoints(jnt):
     #cycles through the joint list to orient the joints
     for each in jnt:
         cmds.joint(each, e=True, oj='xyz', secondaryAxisOrient='yup', ch=True, zso=True)
+
+def createFK(jntlist,side):
+    #from a given joint list create a series of locators and controllers with Parent Constraint for FK
+
+    for each in jntlist:
+        loc = cmds.spaceLocator(position = [0, 0, 0], name = 'loc_ctrl_' + side + each)
+
+        #parent the locator to the selected object
+        cmds.parent(loc, each)
+
+        #zero all transform attributes
+        cmds.setAttr ("loc_ctrl_" + side + each + ".translateX", 0)
+        cmds.setAttr ("loc_ctrl_" + side + each + ".translateY", 0)
+        cmds.setAttr ("loc_ctrl_" + side + each + ".translateZ", 0)
+
+        cmds.setAttr ("loc_ctrl_" + side + each + ".rotateX", 0)
+        cmds.setAttr ("loc_ctrl_" + side + each + ".rotateY", 0)
+        cmds.setAttr ("loc_ctrl_" + side + each + ".rotateZ", 0)
+
+        #set locator transforms to world space
+        cmds.parent(loc, world = True)
+
+        #create curve and parent constrain the locator
+        animcurve = cmds.circle(center=[0,0,0],name= 'anim_' + side + each)
+        cmds.delete(animcurve, icn=True)
+
+        cmds.parent(animcurve,loc)
+
+        cmds.setAttr ("anim_" + side + each + ".translateX", 0)
+        cmds.setAttr ("anim_" + side + each + ".translateY", 0)
+        cmds.setAttr ("anim_" + side + each + ".translateZ", 0)
+
+        cmds.setAttr ("anim_" + side + each + ".rotateX", 0)
+        cmds.setAttr ("anim_" + side + each + ".rotateY", 90)
+        cmds.setAttr ("anim_" + side + each + ".rotateZ", 0)
+
+        cmds.parent(animcurve, world=True)
+        cmds.makeIdentity(animcurve,a=True,t=True, r=True,s=True,pn=True)
+
+        cmds.parentConstraint(loc,each)
+        cmds.parent(loc,animcurve)
+
+def createIK(jntlist,side,prefix):
+    # receive a joint list and side string
+
+    # create IK Handles
+    ankleIK = cmds.ikHandle(sj=jntlist[0],ee=jntlist[1],sol="ikRPsolver",n=(prefix+side+"ankleIK"))
+    ballIK = cmds.ikHandle(sj=jntlist[1],ee=jntlist[2],sol="ikRPsolver",n=(prefix+side+"ballIK"))
+    toeIK = cmds.ikHandle(sj=jntlist[2],ee=jntlist[3],sol="ikRPsolver",n=(prefix+side+"toeIK"))
+
+    #create rig nodes
+    ballNode = cmds.group(n=prefix+side+"ballRig")
+    matchPosition(ballIK[0],ballNode)
+
+    toeNode = cmds.group(n=prefix+side+"toeRig")
+    matchPosition(ballIK[0], toeNode)
+
+    heelNode = cmds.group(n=prefix+side+"heelRig")
+    matchPosition(ankleIK[0], heelNode)
+
+    toeTipNode = cmds.group(n=prefix+side+"toeTipRIG")
+    matchPosition(toeIK[0], toeTipNode)
+
+    footNode = cmds.group(n=prefix+side+"footCtrl")
+    matchPosition(ankleIK[0], footNode)
+
+    #parent ik handles
+    cmds.parent(ankleIK[0], ballIK[0], ballNode)
+    cmds.parent(toeIK[0],toeNode)
+
+    #parent rig nodes
+    cmds.parent(ballNode, toeNode, heelNode)
+    cmds.parent(heelNode, toeTipNode)
+    cmds.parent(toeTipNode, footNode)
+
+    #add control attributes
+    cmds.addAttr(footNode,ln='roll', at='float', min=-10, max=10, dv=False)
+    cmds.setAttr((footNode+".roll"), e=True, keyable=True)
+
+    cmds.addAttr(footNode,ln='toe', at='float', min=-10, max=10, dv=False)
+    cmds.setAttr((footNode+".toe"), e=True, keyable=True)
+
+    #add knee control
+    kneeCtrl = cmds.circle(n=prefix+'kneeCtrl')
+    kneeCtrlGrp = cmds.group(n=(prefix+"kneeCtrlGRP"))
+    cmds.parent(kneeCtrl[0], kneeCtrlGrp)
+    matchPosition(jntlist[0], kneeCtrlGrp)
+    cmds.xform(kneeCtrl[0],r=True,t=[0,0,5])
+    cmds.makeIdentity(kneeCtrlGrp,a=True)
+    cmds.makeIdentity(kneeCtrl[0],a=True)
+    cmds.pointConstraint(jntlist[0],kneeCtrlGrp)
+    cmds.poleVectorConstraint(kneeCtrl[0],ankleIK[0])
+
+    #connect knee control to foot
+    kneeRotateNode = cmds.createNode(multiplyDivide,n=(prefix+"kneeRotateMulti"))
+    cmds.connectAttr((footNode+".rotateY"), (kneeRotateNode+".input1X"),f=True)
+    cmds.setAttr(kneeRotateNode+".input2X", 1)
+    cmds.connectAttr((kneeRotateNode+".outputX"), (kneeCtrlGrp+".rotateY"), f=True)
+
+def matchPosition(posStart,objEnd):
+    # query position of the start object
+    movePos = cmds.xform(posStart, q=True, ws=True, t=True)
+    # move to the final position of the object
+    cmds.move(movePos[0],movePos[1],movePos[2], objEnd, a=True)
+    # freeze transformations
+    cmds.makeIdentity(objEnd,a=True)
