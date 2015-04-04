@@ -2,19 +2,23 @@ import maya.cmds as cmds
 import Modules.System.utils as utils
 reload(utils)
 
+# We can use variables above the class level that can be read on class import
+# This is also known as an attribute of a class
+classname = 'Rig_Arm'
+lytfile = 'arm.json'
+
 class Rig_Arm:
-    def __init__(self, mirror, *args):
+    def __init__(self, mirror, layoutasset, *args):
         print "In Rig Arm"
 
         # Make an empty dictionary to store info about our arm rig
         self.rig_info = {}
 
-        layoutasset = utils.getLayoutAsset()[0]
-
         # getAstContents will return a dictionary with all of the layout joints
         layoutcontents = utils.getAstContents(layoutasset)
 
         self.rig_info = utils.collectLytInfo(layoutcontents['joints'], False)
+        self.rig_info['layoutjointrotations'] = utils.collectLayoutRotations(layoutcontents['joints'])
 
         # call the install function
         self.install()
@@ -29,6 +33,8 @@ class Rig_Arm:
             populates self.rig_info into its own function in utils"""
             # Overide self.rig_info
             self.rig_info = utils.collectLytInfo(layoutcontents['joints'], True)
+            self.rig_info['layoutjointrotations'] = utils.collectLayoutRotations(layoutcontents['joints'])
+            # Now we run the same install with new joint names and positions.
             self.install()
 
     # Make a function called install that will handle all the rigging stuff
@@ -50,11 +56,35 @@ class Rig_Arm:
         for i in range(len(self.rig_info['layoutjoints'])):
             jointInfo.append([self.rig_info['layoutjoints'][i].replace(rootname, ""), self.rig_info['layoutjointpositions'][i]])
 
-        utils.createJointChain(jointInfo, 'rigjnt')
-        utils.createJointChain(jointInfo, 'fkjnt')
-        utils.createJointChain(jointInfo, 'ikjnt')
+        self.rig_info['rigjnts'] = utils.createJointChain(jointInfo, 'rigjnt')
+        self.rig_info['fkjnts'] = utils.createJointChain(jointInfo, 'fkjnt')
+        self.rig_info['ikjnts'] = utils.createJointChain(jointInfo, 'ikjnt')
 
-  
-        """
-        Create controls for fk joints.
-        """
+        # Connect the joint chains
+        self.rig_info['jointcons'] = utils.connectJointChains([self.rig_info['ikjnts'], self.rig_info['fkjnts'], self.rig_info['rigjnts'] ])
+
+        """Create controls for fk joints."""
+        ctrllst = []
+        for c in range(len(self.rig_info['fkjnts'])):
+            if c != 3:
+                ctrl = 'ctrl_circle.ma'
+                ctrlName = self.rig_info['fkjnts'][c].replace('fkjnt_', 'ctrl_')
+                ctrlAttrs = []
+                ctrlPos = self.rig_info['layoutjointpositions'][c]
+                ctrlRot = self.rig_info['layoutjointrotations'][c]
+                lockAttrs = ['.tx', '.ty', '.tz']
+                control = utils.setupControlObject(ctrl, ctrlName, ctrlAttrs, ctrlPos, ctrlRot, lockAttrs)
+                ctrllst.append(control)
+
+                # Constrain the fk joint to the control.
+                cmds.parentConstraint(control[1], self.rig_info['fkjnts'][c], mo=True)
+        
+        # Store the controls in the rig_info dictionary.
+        self.rig_info['fkctrls'] = ctrllst
+
+        # Setup the fk control hierarchy.
+        for c in range(len(self.rig_info['fkctrls'])):
+            if c != 0:
+                print self.rig_info['fkctrls'][c]
+                cmds.parent(self.rig_info['fkctrls'][c][0], self.rig_info['fkctrls'][c-1][1])
+

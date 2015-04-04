@@ -15,7 +15,8 @@ def installLayout(layoutfile, side, prefix, symmetry, mirror):
     assetname = 'Layout_' + side + prefix 
     lytast = cmds.container(n=assetname)
     cmds.addAttr(lytast, shortName="type", longName="type", dt='string', keyable=False)
-    cmds.setAttr(lytast + '.type', prefix, type='string')
+    typename = prefix.replace('_', '')
+    cmds.setAttr(lytast + '.type', typename.lower(), type='string')
 
     if symmetry == True:
         mirassetname = 'LayoutMirror_' + side + prefix 
