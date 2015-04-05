@@ -11,52 +11,64 @@ class makeJoints:
 
         #function to create joints from json library with symmetry and a prefix
     def joints(self, jntInfo, part, symmetry, side, prefix):
-        cmds.select(d=True)
-        jntNum = 0
-        #if symmetry ==True:
-        #    side= '_L'
+        jointlist = []
+        #jointCount=len(jointlist)
+        #jointCount +=1
         if side == '_L':
             symSide='_R'
-        elif side =='_R':
-            symSide='L'
-        while jntNum < len(jntInfo[part]):
-            jntName = prefix + jntInfo[part][jntNum][0] + side
-                #check for existing joint jntName and make new name if exists
-            if cmds.objExists(jntName) ==True:  
-                self.generateNewJointName(jntInfo, part, jntNum)
-                jntName = prefix + jntInfo[part][jntNum][0] + side
-                #create joint jntName and rename if symmetry == True
-            position = jntInfo[part][jntNum][1]
-            if side == '_R':
-                position[0] *= -1
-            cmds.joint(position=position, name=jntName, symmetry=symmetry)
-            if symmetry==True:
-                cmds.rename(jntName + '1', prefix + jntInfo[part][jntNum][0] + symSide)
-                cmds.select(d=True)
-            if side == '_R':
-                position[0] *= -1
-            jntNum +=1
-            #parent joints into chain
-        posChild=len(jntInfo[part])-1
-        posParent=posChild - 1
-        while(posChild>=1):
-            #WHEN SYMMETRY IS TURNED OF THIS THROWS AN ERROR BUT STILL
-            cmds.parent(prefix + jntInfo[part][posChild][0] + side, prefix + jntInfo[part][posParent][0] + side)
-            if symmetry==True:
-                cmds.parent(prefix + jntInfo[part][posChild][0] + symSide, prefix + jntInfo[part][posParent][0] + symSide)
-            posChild-=1
-            posParent-=1
-            cmds.select(d=True)
+        if side =='_R':
+            symSide='_L'
         cmds.select(d=True)
-        cmds.joint (prefix + jntInfo[part][0][0] + side, e=True, oj='xyz', secondaryAxisOrient='yup', ch=True,zso=True)
+        
+        for each in jntInfo[part]:
+            if side == '_R':
+                each[1][0] *= -1
+            jntName = prefix + self.generateNewJointName(prefix, each[0], side, symSide)
+            symName= jntName + symSide
+            jntName += side
+
+
+            cmds.joint(position=each[1], name=jntName, symmetry=symmetry)
+            cmds.select(d=True)
+            
+            if symmetry==True:
+                jntNameLength = len(jntName)
+                cmds.rename(jntName[0:jntNameLength-2] + side + str('1'), jntName[0:jntNameLength-2] + symSide)
+                symName=jntName[0:jntNameLength-2] + symSide
+                jntName=jntName[0:jntNameLength-2] + side
+                jointlist.append([jntName, symName])
+            else:
+                jointlist.append([jntName, None])
+            cmds.select(d=True)        
+            if side == '_R':
+                each[1][0] *= -1
+        for each in range(len(jointlist)):
+            if each != 0:
+                cmds.parent(jointlist[each][0], jointlist[each-1][0])
+                if symmetry == True and each != 0:
+                    cmds.parent(jointlist[each][1], jointlist[each-1][1])
+        print jointlist
+
+
+
+
+
+
+#        cmds.joint (prefix + jntInfo[part][0][0] + side, e=True, oj='xyz', secondaryAxisOrient='yup', ch=True,zso=True)
 
         #create a new name for joints if alreayd exists
-    def generateNewJointName(self, jntInfo, part, jntNum):
-        jntNameLength = len(jntInfo[part][jntNum][0])
-        jntInstant = int(jntInfo[part][jntNum][0][jntNameLength-2:jntNameLength])
-        jntInstant += 1
+    def generateNewJointName(self, prefix, part, side, symSide):
+        jntNameLength = len(part)
+        jntInstant = int(part[jntNameLength-2:jntNameLength])
+        while (cmds.objExists(prefix + part[0:jntNameLength-1] + str(jntInstant) + side)==True or cmds.objExists(prefix + part[0:jntNameLength-1] + str(jntInstant) + symSide)==True) and jntInstant < 10:
+            jntInstant +=1
         if jntInstant >=10:
-            jntInfo[part][jntNum][0] = jntInfo[part][jntNum][0][0:jntNameLength-2] + str(jntInstant)
+            while (cmds.objExists(prefix + part[0:jntNameLength-2] + str(jntInstant) + side)==True or cmds.objExists(prefix + part[0:jntNameLength-2] + str(jntInstant) + symSide)==True):
+                jntInstant +=1
+            jntName = part[0:jntNameLength-2] + str(jntInstant)
         else:
-            jntInfo[part][jntNum][0] = jntInfo[part][jntNum][0][0:jntNameLength-2] + '0' + str(jntInstant)
-        return jntInfo
+            jntName = part[0:jntNameLength-2] + '0' + str(jntInstant)
+        return jntName
+
+
+

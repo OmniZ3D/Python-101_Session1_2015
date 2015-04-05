@@ -6,6 +6,7 @@ import tempfile
 import Modules.System.utils as utils
 reload(utils)
 import Modules.Rigging.rig_arm as rig_arm
+
  
 # The UI class
 class RDojo_UI:
@@ -24,6 +25,7 @@ class RDojo_UI:
         """ Create a dictionary to store UI elements.
         This will allow us to access these elements later. """
         self.UIElements = {}
+
  
     # The function for building the UI
     def ui(self, *args):
@@ -53,6 +55,10 @@ class RDojo_UI:
         # Rig arm button
         cmds.separator(p=self.UIElements["guiFlowLayout1"])
         self.UIElements["rigarm_button"] = cmds.button(label='rig part', width=buttonWidth, height=buttonHeight, p=self.UIElements["guiFlowLayout1"], c=self.runRigCommand) 
+
+                # Rig arm button
+        cmds.separator(p=self.UIElements["guiFlowLayout1"])
+        self.UIElements["buildRig_button"] = cmds.button(label='build rig part', width=buttonWidth, height=buttonHeight, p=self.UIElements["guiFlowLayout1"], c=self.rigPart) 
 
                 # Text field for the prefix name
         cmds.separator(w=5, p=self.UIElements["guiFlowLayout1"])
@@ -95,3 +101,6 @@ class RDojo_UI:
     def saveLayoutButton(self, *args):
         path = cmds.fileDialog(directoryMask='G:/Users/rogerm/Documents/GitHub/Python-101_Session1_2015/Modules/Layout/*.json', mode =1)
         utils.writeJson(path, self.jntInfo)
+
+    def rigPart(self, *args):
+        utils.rigPart()
