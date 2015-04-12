@@ -7,7 +7,8 @@ def installLayout(layoutfile, side, prefix, symmetry, mirror):
     data = utils.readJson(layoutfile)
     # Load the data as a dictionary
     info = json.loads(data)
-    jointInfo = info['Arm']
+    for key, value in info.iteritems():
+        jointInfo = info[key]
 
     # Now we have all the data we need to build the joints
     jntinfo = utils.createLytJoints(jointInfo, prefix, side, symmetry)

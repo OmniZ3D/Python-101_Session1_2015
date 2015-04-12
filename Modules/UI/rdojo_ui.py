@@ -144,13 +144,14 @@ class RDojo_UI:
             in the layout folder """
         
         lytfilelst = os.listdir(os.environ["RDOJO"] + 'Modules/Layout/')
+
         # Read the JSON file and store data to dict
         for item in lytfilelst:
             data = utils.readJson(os.environ["RDOJO"] + 'Modules/Layout/' + item)
             info = json.loads( data )
-        for key, value in info.iteritems():
-            keys.append(key)
-            self.layout_info[key] = value
+            for key, value in info.iteritems():
+                keys.append(key)
+                self.layout_info[key] = value
 
         # Add all the json to the self.layout_info dictionary.
         self.layout_info['Keys'] = keys 
